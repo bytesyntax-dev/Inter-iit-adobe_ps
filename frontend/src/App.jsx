@@ -6,6 +6,7 @@ const API_BASE_URL = 'http://localhost:5000';
 
 export default function App() {
   const [tree, setTree] = useState({ nodes: {}, rootId: null, activeId: null });
+  const [sessions, setSessions] = useState([]);
   const [messages, setMessages] = useState([
     {
       id: 'welcome',
@@ -26,10 +27,23 @@ export default function App() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Fetch current tree state on mount (recovers session if server is already running)
+  // Fetch current tree state and all sessions on mount
   useEffect(() => {
     fetchSession();
+    fetchSessions();
   }, []);
+
+  const fetchSessions = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/sessions`);
+      if (res.ok) {
+        const data = await res.json();
+        setSessions(data.sessions || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch sessions:', err);
+    }
+  };
 
   const fetchSession = async () => {
     try {
@@ -52,6 +66,45 @@ export default function App() {
       }
     } catch (err) {
       console.warn('Backend server not running yet or unreachable. Start the backend to test.', err);
+    }
+  };
+
+  const handleSelectSession = async (rootId) => {
+    if (loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/sessions/select`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rootId })
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to switch session');
+      }
+      const data = await res.json();
+      setTree(data.tree);
+      
+      const activeNode = data.tree.nodes[data.tree.activeId];
+      setMessages([
+        {
+          id: 'welcome',
+          sender: 'bot',
+          text: 'Hello! I am your AI Image Editor. Please upload an image to begin. Once uploaded, you can describe edits using natural language (e.g., "make it 30% brighter", "add mosaic style", "apply sepia tone").',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        },
+        {
+          id: `switch-${Date.now()}`,
+          sender: 'bot',
+          text: `Switched to editing session. This session has ${Object.keys(data.tree.nodes).length} versions. Current active version: "${activeNode ? activeNode.explanation : 'Original'}"`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -83,6 +136,7 @@ export default function App() {
 
       const data = await res.json();
       setTree(data.tree);
+      fetchSessions();
       
       setMessages([
         {
@@ -144,6 +198,7 @@ export default function App() {
 
       const data = await res.json();
       setTree(data.tree);
+      fetchSessions();
 
       // Add bot explanation response to chat
       const botMessage = {
@@ -218,7 +273,7 @@ export default function App() {
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Top Application Header */}
       <header className="app-header">
-        <div className="logo-container">
+        <div className="logo-container" style={{ cursor: 'pointer' }} onClick={() => setTree({ nodes: {}, rootId: null, activeId: null })}>
           <div className="logo-icon">AI</div>
           <div>
             <h1 className="logo-text">AuraEdit</h1>
@@ -226,28 +281,58 @@ export default function App() {
           </div>
         </div>
         
-        {tree.rootId && (
-          <button 
-            className="control-item" 
-            onClick={() => handleSelectNode(tree.rootId)}
-            style={{ 
-              background: 'transparent', 
-              border: '1px solid var(--border)', 
-              color: 'var(--text-secondary)',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              fontSize: '12px'
-            }}
-          >
-            <RefreshCw size={14} /> Start Over
-          </button>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {sessions.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Select Session:</span>
+              <select
+                value={tree.rootId || ''}
+                onChange={(e) => handleSelectSession(e.target.value)}
+                style={{
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-primary)',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+                disabled={loading}
+              >
+                <option value="" disabled>-- Choose Session --</option>
+                {sessions.map((s) => (
+                  <option key={s.rootId} value={s.rootId}>
+                    {s.activeExplanation.length > 25 ? s.activeExplanation.substring(0, 25) + '...' : s.activeExplanation} ({s.nodeCount} versions)
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          
+          {tree.rootId && (
+            <button 
+              className="control-item" 
+              onClick={() => handleSelectNode(tree.rootId)}
+              style={{ 
+                background: 'transparent', 
+                border: '1px solid var(--border)', 
+                color: 'var(--text-secondary)',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                fontSize: '12px'
+              }}
+            >
+              <RefreshCw size={14} /> Start Over
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Main workspace section */}
       {!tree.rootId ? (
         // 1. Initial State: Screen to upload image
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-dark)' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-dark)', padding: '20px', gap: '30px' }}>
           <div className="upload-placeholder" onClick={handleUploadClick}>
             <div className="upload-icon-container">
               <Upload size={32} />
@@ -269,6 +354,56 @@ export default function App() {
             accept="image/*" 
             className="hidden-file-input"
           />
+
+          {sessions.length > 0 && (
+            <div style={{ width: '100%', maxWidth: '600px', marginTop: '20px' }}>
+              <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <GitBranch size={16} style={{ color: 'var(--accent-purple)' }} />
+                Or Resume a Previous Session:
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px' }}>
+                {sessions.map((s) => (
+                  <div
+                    key={s.rootId}
+                    onClick={() => handleSelectSession(s.rootId)}
+                    style={{
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '8px',
+                      padding: '12px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                      transition: 'all 0.2s ease-in-out',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--accent-purple)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--border)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <div style={{ width: '100%', height: '100px', borderRadius: '4px', overflow: 'hidden', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <img
+                        src={`${API_BASE_URL}/${s.activeImage}`}
+                        alt="Session Preview"
+                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                      />
+                    </div>
+                    <div style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                      {s.activeExplanation}
+                    </div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                      {s.nodeCount} versions
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         // 2. Interactive Editing Dashboard

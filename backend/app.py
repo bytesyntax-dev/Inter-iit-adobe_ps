@@ -33,6 +33,9 @@ current_tree = EditTree()
 parser = InstructionParser()
 processor = ImageProcessor()
 
+# Global dictionary to track multiple edit tree sessions: root_id -> EditTree
+all_trees = {}
+
 def allowed_file(filename):
     """
     Checks if the uploaded file has a valid image extension.
@@ -56,7 +59,7 @@ def upload_image():
     Endpoint to upload a new base image. 
     Initializes a fresh edit tree with the uploaded image as the root node.
     """
-    global current_tree
+    global current_tree, all_trees
     
     # 1. Check if file is in request
     if 'image' not in request.files:
@@ -83,6 +86,9 @@ def upload_image():
             explanation="Original image uploaded.",
             operation={"op": "upload", "params": {}}
         )
+        
+        # Store this tree session in the global dictionary
+        all_trees[root_id] = current_tree
         
         return jsonify({
             "message": "Image uploaded successfully",
@@ -187,6 +193,52 @@ def select_node():
     else:
         return jsonify({"error": "Node not found"}), 404
 
+
+
+@app.route('/api/sessions', methods=['GET'])
+def get_sessions():
+    """
+    Returns a list of all active image editing sessions.
+    """
+    global all_trees
+    sessions_list = []
+    for root_id, tree in all_trees.items():
+        root_node = tree.nodes.get(root_id)
+        active_node = tree.nodes.get(tree.active_id)
+        if root_node and active_node:
+            sessions_list.append({
+                "rootId": root_id,
+                "rootImage": root_node['imagePath'],
+                "activeImage": active_node['imagePath'],
+                "explanation": root_node['explanation'],
+                "activeExplanation": active_node['explanation'],
+                "nodeCount": len(tree.nodes),
+                "timestamp": root_node.get('timestamp', 0)
+            })
+    # Sort sessions by timestamp descending (newest first)
+    sessions_list.sort(key=lambda x: x.get('timestamp', 0), reverse=True)
+    return jsonify({"sessions": sessions_list})
+
+@app.route('/api/sessions/select', methods=['POST'])
+def select_session():
+    """
+    Restores an active session by its root node ID.
+    """
+    global current_tree, all_trees
+    data = request.json or {}
+    root_id = data.get('rootId')
+    
+    if not root_id:
+        return jsonify({"error": "rootId is required"}), 400
+        
+    if root_id in all_trees:
+        current_tree = all_trees[root_id]
+        return jsonify({
+            "message": "Session switched successfully",
+            "tree": current_tree.serialize()
+        })
+    else:
+        return jsonify({"error": "Session not found"}), 404
 
 
 if __name__ == '__main__':
