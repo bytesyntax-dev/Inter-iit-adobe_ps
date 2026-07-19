@@ -343,13 +343,7 @@ export default function App() {
                       <div className="session-item-meta">{s.nodeCount} edits</div>
                     </div>
                   </div>
-                  <button 
-                    className="delete-session-btn" 
-                    onClick={(e) => handleDeleteSession(e, s.rootId)}
-                    title="Delete session"
-                  >
-                    <Trash2 size={13} />
-                  </button>
+
                 </div>
               ))
             )}
