@@ -1,0 +1,16 @@
+# Python virtual environment
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Local IDE folders
+.gemini/
+
+# Output and build folders
+test_output/
+node_modules/
+dist/
+
+# Presentation deliverables (excluded from github as requested)
+WINTERFELL_Presentation.pptx
