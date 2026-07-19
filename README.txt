@@ -1,4 +1,4 @@
-AuraEdit: Conversational AI Image Editor with Versioned Edit History
+Adobe Image Editor: Conversational AI Image Editor with Versioned Edit History
 Submission Deliverables Directory
 
 This Google Drive folder contains the project deliverables for the Conversational AI Image Editor challenge (Inspired by Adobe - Inter IIT Tech Meet 14.0).
@@ -6,7 +6,7 @@ This Google Drive folder contains the project deliverables for the Conversationa
 Folder Contents:
 =========================================
 1. [Video Demonstration] (TEAMNAME_PSNAME.mp4)
-   - A short (less than 5 mins) screen-recording demonstrating the full workflow of AuraEdit:
+   - A short (less than 5 mins) screen-recording demonstrating the full workflow of Adobe Image Editor:
      - Base image upload
      - Conversational tone/color editing (brightness, contrast, sepia, etc.)
      - AI-powered style transfer (Candy/Mosaic painting styles)

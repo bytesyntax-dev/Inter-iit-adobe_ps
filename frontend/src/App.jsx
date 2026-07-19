@@ -274,9 +274,9 @@ export default function App() {
       {/* Top Application Header */}
       <header className="app-header">
         <div className="logo-container" style={{ cursor: 'pointer' }} onClick={() => setTree({ nodes: {}, rootId: null, activeId: null })}>
-          <div className="logo-icon">AI</div>
+          <div className="logo-icon">Ad</div>
           <div>
-            <h1 className="logo-text">AuraEdit</h1>
+            <h1 className="logo-text">Adobe</h1>
             <div className="tagline">Conversational Image Workspace</div>
           </div>
         </div>

@@ -1,8 +1,8 @@
-# AuraEdit: Conversational AI Image Editor with Versioned Edit History
+# Adobe Image Editor: Conversational AI Image Editor with Versioned Edit History
 
 Inspired by Adobe — Inter IIT Tech Meet 14.0
 
-AuraEdit is a web-based conversational image editor that translates natural language editing requests into image processing operations, maintains a persistent branching version control tree of edits, and lets you explore alternative creative paths through a visual, interactive node graph.
+Adobe Image Editor is a web-based conversational image editor that translates natural language editing requests into image processing operations, maintains a persistent branching version control tree of edits, and lets you explore alternative creative paths through a visual, interactive node graph.
 
 ---
 
