@@ -14,6 +14,7 @@ AuraEdit is a web-based conversational image editor that translates natural lang
 4. **Genuinely Branching Edit Tree:** Every edit produces a node in a persistent, branching version history. Selecting a historical state lets you branch off to try alternative edit paths, creating a non-linear history tree.
 5. **Visual Node Graph:** Responsive SVG tree renderer in the sidebar displaying parent-child relationships and active canvas nodes.
 6. **Context Retention:** Chained operations apply dynamically based on the parent state you are currently viewing.
+7. **Session Management:** Ability to manage multiple editing sessions independently, with the ability to start new sessions, switch between them, and delete unwanted ones from the history sidebar.
 
 ---
 

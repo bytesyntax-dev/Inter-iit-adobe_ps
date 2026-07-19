@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, Send, Sparkles, RefreshCw, Eye, GitBranch, AlertCircle, Image as ImageIcon } from 'lucide-react';
+import { Upload, Send, Sparkles, RefreshCw, Eye, GitBranch, AlertCircle, Image as ImageIcon, Plus, Trash2, MessageSquare } from 'lucide-react';
 import TreeView from './components/TreeView';
 
 const API_BASE_URL = 'http://localhost:5000';
@@ -270,7 +270,7 @@ export default function App() {
   const isBranchingPoint = activeNode && activeNode.children.length > 0;
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="app-container" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Top Application Header */}
       <header className="app-header">
         <div className="logo-container" style={{ cursor: 'pointer' }} onClick={() => setTree({ nodes: {}, rootId: null, activeId: null })}>
@@ -281,246 +281,224 @@ export default function App() {
           </div>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {sessions.length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Select Session:</span>
-              <select
-                value={tree.rootId || ''}
-                onChange={(e) => handleSelectSession(e.target.value)}
-                style={{
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-primary)',
-                  padding: '6px 12px',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  outline: 'none',
-                  cursor: 'pointer'
-                }}
-                disabled={loading}
-              >
-                <option value="" disabled>-- Choose Session --</option>
-                {sessions.map((s) => (
-                  <option key={s.rootId} value={s.rootId}>
-                    {s.activeExplanation.length > 25 ? s.activeExplanation.substring(0, 25) + '...' : s.activeExplanation} ({s.nodeCount} versions)
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          
-          {tree.rootId && (
-            <button 
-              className="control-item" 
-              onClick={() => handleSelectNode(tree.rootId)}
-              style={{ 
-                background: 'transparent', 
-                border: '1px solid var(--border)', 
-                color: 'var(--text-secondary)',
-                padding: '6px 12px',
-                borderRadius: '6px',
-                fontSize: '12px'
-              }}
-            >
-              <RefreshCw size={14} /> Start Over
-            </button>
-          )}
-        </div>
+        {tree.rootId && (
+          <button 
+            className="control-item" 
+            onClick={() => handleSelectNode(tree.rootId)}
+            style={{ 
+              background: 'transparent', 
+              border: '1px solid var(--border)', 
+              color: 'var(--text-secondary)',
+              padding: '6px 12px',
+              borderRadius: '6px',
+              fontSize: '12px'
+            }}
+          >
+            <RefreshCw size={14} /> Start Over
+          </button>
+        )}
       </header>
 
-      {/* Main workspace section */}
-      {!tree.rootId ? (
-        // 1. Initial State: Screen to upload image
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-dark)', padding: '20px', gap: '30px' }}>
-          <div className="upload-placeholder" onClick={handleUploadClick}>
-            <div className="upload-icon-container">
-              <Upload size={32} />
-            </div>
-            <h2 style={{ fontSize: '18px', fontWeight: 600, fontFamily: 'Outfit' }}>Upload base image to start</h2>
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', textAlign: 'center', maxWidth: '320px', lineHeight: 1.5 }}>
-              Drag and drop an image or click to browse. We support PNG, JPG, JPEG, and WEBP.
-            </p>
-            {error && (
-              <div style={{ display: 'flex', gap: '8px', color: '#EF4444', fontSize: '13px', alignItems: 'center', marginTop: '8px' }}>
-                <AlertCircle size={16} /> {error}
-              </div>
-            )}
+      <div className="workspace-layout">
+        {/* Gemini-Style Left History Sidebar */}
+        <aside className="history-sidebar">
+          <div className="new-chat-container">
+            <button 
+              className="new-chat-btn"
+              onClick={() => {
+                setTree({ nodes: {}, rootId: null, activeId: null });
+                setMessages([
+                  {
+                    id: 'welcome',
+                    sender: 'bot',
+                    text: 'Hello! I am your AI Image Editor. Please upload an image to begin. Once uploaded, you can describe edits using natural language.',
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  }
+                ]);
+              }}
+            >
+              <Plus size={16} />
+              <span>New Session</span>
+            </button>
           </div>
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
-            accept="image/*" 
-            className="hidden-file-input"
-          />
-
-          {sessions.length > 0 && (
-            <div style={{ width: '100%', maxWidth: '600px', marginTop: '20px' }}>
-              <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <GitBranch size={16} style={{ color: 'var(--accent-purple)' }} />
-                Or Resume a Previous Session:
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px' }}>
-                {sessions.map((s) => (
-                  <div
-                    key={s.rootId}
-                    onClick={() => handleSelectSession(s.rootId)}
-                    style={{
-                      background: 'var(--bg-card)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '8px',
-                      padding: '12px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '8px',
-                      transition: 'all 0.2s ease-in-out',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--accent-purple)';
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--border)';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                    }}
-                  >
-                    <div style={{ width: '100%', height: '100px', borderRadius: '4px', overflow: 'hidden', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <img
-                        src={`${API_BASE_URL}/${s.activeImage}`}
-                        alt="Session Preview"
-                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-                      />
+          
+          <div className="sessions-list-container">
+            {sessions.length === 0 ? (
+              <div style={{ padding: '20px 10px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                No active sessions
+              </div>
+            ) : (
+              sessions.map((s) => (
+                <div 
+                  key={s.rootId}
+                  className={`session-list-item ${tree.rootId === s.rootId ? 'active' : ''}`}
+                  onClick={() => handleSelectSession(s.rootId)}
+                >
+                  <div className="session-item-content">
+                    <div className="session-item-thumbnail">
+                      <img src={`${API_BASE_URL}/${s.activeImage}`} alt="Session active state preview" />
                     </div>
-                    <div style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                      {s.activeExplanation}
-                    </div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                      {s.nodeCount} versions
+                    <div className="session-item-info">
+                      <div className="session-item-title">{s.activeExplanation}</div>
+                      <div className="session-item-meta">{s.nodeCount} edits</div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        // 2. Interactive Editing Dashboard
-        <main className="dashboard">
-          
-          {/* LEFT: Conversation Chat Panel */}
-          <section className="chat-panel">
-            <div className="panel-header">
-              <Sparkles size={18} style={{ color: 'var(--accent-purple)' }} />
-              <h2 className="panel-title">Conversation</h2>
-            </div>
-            
-            <div className="chat-history">
-              {messages.map((msg) => (
-                <div key={msg.id} className={`chat-message ${msg.sender}`}>
-                  <div>{msg.text}</div>
-                  <div className="message-time">{msg.time}</div>
+                  <button 
+                    className="delete-session-btn" 
+                    onClick={(e) => handleDeleteSession(e, s.rootId)}
+                    title="Delete session"
+                  >
+                    <Trash2 size={13} />
+                  </button>
                 </div>
-              ))}
-              <div ref={chatEndRef} />
-            </div>
-
-            <div className="chat-input-area">
-              <form onSubmit={handleSend} className="chat-form">
-                <input
-                  type="text"
-                  placeholder="Describe your edits..."
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
-                  className="chat-input"
-                  disabled={loading}
-                />
-                <button type="submit" className="send-button" disabled={loading || !userInput.trim()}>
-                  <Send size={16} />
-                </button>
-              </form>
-            </div>
-          </section>
-
-          {/* CENTER: Working Image Canvas */}
-          <section className="canvas-panel">
-            {loading && (
-              <div className="loading-overlay">
-                <div className="spinner"></div>
-                <div style={{ fontSize: '14px', fontWeight: 500 }}>AI is processing your image...</div>
-              </div>
+              ))
             )}
-            
-            <div className="canvas-container">
-              <div className="canvas-image-wrapper">
-                <img
-                  src={activeImageUrl}
-                  alt="Active Working Canvas"
-                  className="canvas-image"
-                />
-              </div>
-            </div>
+          </div>
+        </aside>
 
-            <div className="canvas-controls">
-              <div className="control-item">
-                <Eye size={16} />
-                <span>Viewing Active Version</span>
+        {/* Main Workspace (depends on active tree) */}
+        {!tree.rootId ? (
+          // 1. Initial State: Screen to upload image
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-dark)', padding: '20px', gap: '20px' }}>
+            <div className="upload-placeholder" onClick={handleUploadClick}>
+              <div className="upload-icon-container">
+                <Upload size={32} />
               </div>
-              
-              {isBranchingPoint && (
-                <div className="control-item" style={{ color: 'var(--accent-pink)' }}>
-                  <GitBranch size={16} />
-                  <span>Sub-branches exist here</span>
+              <h2 style={{ fontSize: '18px', fontWeight: 600, fontFamily: 'Outfit' }}>Upload base image to start</h2>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', textAlign: 'center', maxWidth: '320px', lineHeight: 1.5 }}>
+                Drag and drop an image or click to browse. We support PNG, JPG, JPEG, and WEBP.
+              </p>
+              {error && (
+                <div style={{ display: 'flex', gap: '8px', color: '#EF4444', fontSize: '13px', alignItems: 'center', marginTop: '8px' }}>
+                  <AlertCircle size={16} /> {error}
                 </div>
               )}
             </div>
-          </section>
-
-          {/* RIGHT: Branching History Tree Sidebar */}
-          <section className="tree-panel">
-            <div className="panel-header">
-              <GitBranch size={18} style={{ color: 'var(--accent-blue)' }} />
-              <h2 className="panel-title">Version History</h2>
-            </div>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              accept="image/*" 
+              className="hidden-file-input"
+            />
+          </div>
+        ) : (
+          // 2. Interactive Editing Dashboard
+          <main className="dashboard" style={{ flex: 1 }}>
             
-            <div className="tree-hint">
-              <AlertCircle size={14} />
-              <span>Click nodes to restore that history state.</span>
-            </div>
+            {/* LEFT: Conversation Chat Panel */}
+            <section className="chat-panel">
+              <div className="panel-header">
+                <Sparkles size={18} style={{ color: 'var(--accent-purple)' }} />
+                <h2 className="panel-title">Conversation</h2>
+              </div>
+              
+              <div className="chat-history">
+                {messages.map((msg) => (
+                  <div key={msg.id} className={`chat-message ${msg.sender}`}>
+                    <div>{msg.text}</div>
+                    <div className="message-time">{msg.time}</div>
+                  </div>
+                ))}
+                <div ref={chatEndRef} />
+              </div>
 
-            <div className="tree-canvas-container">
-              <TreeView 
-                treeData={tree} 
-                onSelectNode={handleSelectNode} 
-              />
-            </div>
+              <div className="chat-input-area">
+                <form onSubmit={handleSend} className="chat-form">
+                  <input
+                    type="text"
+                    placeholder="Describe your edits..."
+                    value={userInput}
+                    onChange={(e) => setUserInput(e.target.value)}
+                    className="chat-input"
+                    disabled={loading}
+                  />
+                  <button type="submit" className="send-button" disabled={loading || !userInput.trim()}>
+                    <Send size={16} />
+                  </button>
+                </form>
+              </div>
+            </section>
 
-            {activeNode && (
-              <div className="node-details">
-                {isBranchingPoint ? (
-                  <span className="branch-badge">Branch point</span>
-                ) : (
-                  <span className="active-badge">Active node</span>
-                )}
-                <h3 className="node-details-title">Selected State details</h3>
-                <p className="node-details-desc">{activeNode.explanation}</p>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>
-                  ID: {activeNode.id} • Created: {new Date(activeNode.timestamp * 1000).toLocaleTimeString()}
+            {/* CENTER: Working Image Canvas */}
+            <section className="canvas-panel">
+              {loading && (
+                <div className="loading-overlay">
+                  <div className="spinner"></div>
+                  <div style={{ fontSize: '14px', fontWeight: 500 }}>AI is processing your image...</div>
+                </div>
+              )}
+              
+              <div className="canvas-container">
+                <div className="canvas-image-wrapper">
+                  <img
+                    src={activeImageUrl}
+                    alt="Active Working Canvas"
+                    className="canvas-image"
+                  />
                 </div>
               </div>
-            )}
-          </section>
 
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
-            accept="image/*" 
-            className="hidden-file-input"
-          />
-        </main>
-      )}
+              <div className="canvas-controls">
+                <div className="control-item">
+                  <Eye size={16} />
+                  <span>Viewing Active Version</span>
+                </div>
+                
+                {isBranchingPoint && (
+                  <div className="control-item" style={{ color: 'var(--accent-pink)' }}>
+                    <GitBranch size={16} />
+                    <span>Sub-branches exist here</span>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* RIGHT: Branching History Tree Sidebar */}
+            <section className="tree-panel">
+              <div className="panel-header">
+                <GitBranch size={18} style={{ color: 'var(--accent-blue)' }} />
+                <h2 className="panel-title">Version History</h2>
+              </div>
+              
+              <div className="tree-hint">
+                <AlertCircle size={14} />
+                <span>Click nodes to restore that history state.</span>
+              </div>
+
+              <div className="tree-canvas-container">
+                <TreeView 
+                  treeData={tree} 
+                  onSelectNode={handleSelectNode} 
+                />
+              </div>
+
+              {activeNode && (
+                <div className="node-details">
+                  {isBranchingPoint ? (
+                    <span className="branch-badge">Branch point</span>
+                  ) : (
+                    <span className="active-badge">Active node</span>
+                  )}
+                  <h3 className="node-details-title">Selected State details</h3>
+                  <p className="node-details-desc">{activeNode.explanation}</p>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                    ID: {activeNode.id} • Created: {new Date(activeNode.timestamp * 1000).toLocaleTimeString()}
+                  </div>
+                </div>
+              )}
+            </section>
+
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              accept="image/*" 
+              className="hidden-file-input"
+            />
+          </main>
+        )}
+      </div>
     </div>
   );
 }

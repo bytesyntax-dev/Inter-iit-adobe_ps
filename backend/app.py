@@ -240,6 +240,23 @@ def select_session():
     else:
         return jsonify({"error": "Session not found"}), 404
 
+@app.route('/api/sessions/<root_id>', methods=['DELETE'])
+def delete_session(root_id):
+    """
+    Deletes an active session from memory.
+    """
+    global current_tree, all_trees
+    if root_id in all_trees:
+        del all_trees[root_id]
+        # If deleted tree was the active tree, reset current_tree
+        if current_tree.root_id == root_id:
+            current_tree = EditTree()
+        return jsonify({
+            "message": "Session deleted successfully"
+        })
+    else:
+        return jsonify({"error": "Session not found"}), 404
+
 
 if __name__ == '__main__':
     # Run the server locally on port 5000
