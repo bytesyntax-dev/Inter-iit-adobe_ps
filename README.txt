@@ -5,7 +5,7 @@ This Google Drive folder contains the project deliverables for the Conversationa
 
 Folder Contents:
 =========================================
-1. [Video Demonstration] (TEAMNAME_PSNAME.mp4)
+1. [Video Demonstration] (WINTERFELL_CONVERSATIONAL_AI_IMAGE_EDITOR.mp4)
    - A short (less than 5 mins) screen-recording demonstrating the full workflow of Adobe Image Editor:
      - Base image upload
      - Conversational tone/color editing (brightness, contrast, sepia, etc.)
@@ -13,7 +13,7 @@ Folder Contents:
      - AI-powered background removal (U2-Net segmentation)
      - Interactive version control branching tree navigation in the sidebar.
 
-2. [Project Presentation] (TEAMNAME_Presentation.pptx)
+2. [Project Presentation] (WINTERFELL_Presentation.pptx)
    - The team's presentation slides explaining the architecture, model pipeline, optimization strategies, and measured performance metrics.
 
 3. [Documentation] (Folder)
